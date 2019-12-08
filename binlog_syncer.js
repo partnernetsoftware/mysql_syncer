@@ -13,12 +13,14 @@ var md5_argo = md5(s2o(argo));
 
 console.log(md5_argo);
 
-var {filename,position,includeSchema,excludeSchema} = load(md5_argo+'.tmp') || argo;
+var {filename,position} = load(md5_argo+'.tmp') || argo;
+
+var {includeSchema,excludeSchema} = argo;
 
 includeSchema = s2o(includeSchema);
 excludeSchema = s2o(excludeSchema);
 
-console.log({filename,position,includeSchema,excludeSchema});//process.exit();
+console.log({filename,position,includeSchema,excludeSchema,argo});//process.exit();
 
 var flg_init_with_info = !!(filename && position);
 
@@ -75,7 +77,6 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 		zongji.on('binlog', onBinlog);
 
 		zongji.start({
-			//excludeSchema: {'mysql':true, 'information_schema':true},
 			includeSchema,excludeSchema,
 			includeEvents: ['rotate','tablemap','writerows','updaterows'],
 			startAtEnd:!flg_init_with_info,
@@ -94,10 +95,16 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 					var {nextPosition,position,binlogName,tableId,tableMap={},rows} = evt;
 
 					if('writerows'==eventName){
-						//TODO if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
+						if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
 						var tableInfo = tableMap[tableId]||{};
 						var {parentSchema,tableName} = tableInfo;
-						if('g_tick2'==tableName) return;//special patch for g_tick2
+						//if (excludeSchema){
+						//	var excludeSchema_a = excludeSchema[parentSchema];
+						//	if (excludeSchema_a && excludeSchema_a.indexOf && excludeSchema_a.indexOf(tableName)>=0){
+						//		console.log('SKIP INSERT '+parentSchema+'.'+tableName);
+						//		return;
+						//	}
+						//}
 						sql='INSERT INTO '+parentSchema+'.'+tableName;//+' SET ? ON DUPLICATE KEY UPDATE ?';
 						var sql2 = mysql.format('?',rows);
 						var insert_sql = sql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
@@ -105,10 +112,16 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 						await exec_sql(tgt,insert_sql);
 						return;
 					}else if('updaterows'==eventName){
-						//TODO if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
+						if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
 						var tableInfo = tableMap[tableId]||{};
 						var {parentSchema,tableName} = tableInfo;
-						if('g_tick2'==tableName) return;//special patch for g_tick2
+						//if (excludeSchema){
+						//	var excludeSchema_a = excludeSchema[parentSchema];
+						//	if (excludeSchema_a && excludeSchema_a.indexOf && excludeSchema_a.indexOf(tableName)>=0){
+						//		console.log('SKIP UPDATE '+parentSchema+'.'+tableName);
+						//		return;
+						//	}
+						//}
 						//sql='UPDATE ';
 						//sql+=parentSchema+'.'+tableName+' SET ? ';
 						sql='INSERT INTO '+parentSchema+'.'+tableName;
