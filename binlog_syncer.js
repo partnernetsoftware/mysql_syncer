@@ -58,7 +58,14 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 	try{
 		var latest_filename = filename;
 		var tgt = mysql.createConnection(tgt_config);
-		tgt.on('error',console.log);
+		tgt.on('error',err=>{
+			console.log('tgt.error',err);
+			if(zongji){
+				zongji.removeListener('binlog', onBinlog);
+				zongji.stop();
+			}
+			setTimeout(process.exit,1111);
+		});
 		tgt.connect();
 		if(!! argo.skip_tgt_binlog) // default no skip
 			await exec_sql(tgt,'SET @@session.sql_log_bin=0');//skip binlog when sync
@@ -68,10 +75,13 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 		var work_q = [];
 
 		var onBinlog = (evt)=>work_q.push(evt);
-		zongji.on('error',function(rsn){
-			console.log('!!!! error',rsn);
-			zongji.removeListener('binlog', onBinlog);
-			zongji.stop();
+		zongji.on('error',(rsn)=>{
+			console.log('!!!!! error',rsn);
+			if(zongji){
+				zongji.removeListener('binlog', onBinlog);
+				zongji.stop();
+			}
+			setTimeout(process.exit,1111);
 		});
 		process.on('SIGINT', function() {
 			console.log('Got SIGINT.');
