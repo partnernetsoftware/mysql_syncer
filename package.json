@@ -1,7 +1,7 @@
 {
   "name": "mysql_syncer",
-  "version": "0.0.9",
-  "description": "mysql syncer",
+  "version": "0.0.10",
+  "description": "mysql syncer upon zongji",
   "main": "binlog_syncer.js",
   "repository": {
     "type": "git",
@@ -9,10 +9,6 @@
   },
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/partnernetsoftware/mysql_syncer/issues"
-  },
-  "homepage": "https://github.com/partnernetsoftware/mysql_syncer#readme",
   "dependencies": {
     "p4web": "^0.1.0",
     "zongji": "^0.5.1"

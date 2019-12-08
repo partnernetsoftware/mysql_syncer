@@ -1,5 +1,6 @@
 //NOTES: run at tgt server should have better performance ?
 
+//const argv2o = a => (a || require('process').argv || []).reduce((r, e) => ((m = e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/)) && (r[m[2]] = s2o(m[3])||m[3]), r), {});
 const argv2o = a => (a || require('process').argv || []).reduce((r, e) => ((m = e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/)) && (r[m[2]] = m[3]), r), {});
 var argo = argv2o();
 const p4web = require('p4web')({cookie_pack:'default'});
@@ -95,23 +96,15 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 				if(evt){
 					var eventName = evt.getEventName();
 					if (eventName == 'tablemap'){ return; }
-					var sql='';
 					var {nextPosition,position,binlogName,tableId,tableMap={},rows} = evt;
 
 					if('writerows'==eventName){
 						if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
 						var tableInfo = tableMap[tableId]||{};
 						var {parentSchema,tableName} = tableInfo;
-						//if (excludeSchema){
-						//	var excludeSchema_a = excludeSchema[parentSchema];
-						//	if (excludeSchema_a && excludeSchema_a.indexOf && excludeSchema_a.indexOf(tableName)>=0){
-						//		console.log('SKIP INSERT '+parentSchema+'.'+tableName);
-						//		return;
-						//	}
-						//}
-						sql='INSERT INTO '+parentSchema+'.'+tableName;//+' SET ? ON DUPLICATE KEY UPDATE ?';
+						var basesql='INSERT INTO '+parentSchema+'.'+tableName;//+' SET ? ON DUPLICATE KEY UPDATE ?';
 						var sql2 = mysql.format('?',rows);
-						var insert_sql = sql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
+						var insert_sql = basesql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
 						console.log(insert_sql);
 						await exec_sql(tgt,insert_sql);
 						return;
@@ -119,25 +112,19 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 						if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
 						var tableInfo = tableMap[tableId]||{};
 						var {parentSchema,tableName} = tableInfo;
-						//if (excludeSchema){
-						//	var excludeSchema_a = excludeSchema[parentSchema];
-						//	if (excludeSchema_a && excludeSchema_a.indexOf && excludeSchema_a.indexOf(tableName)>=0){
-						//		console.log('SKIP UPDATE '+parentSchema+'.'+tableName);
-						//		return;
-						//	}
-						//}
-						//sql='UPDATE ';
-						//sql+=parentSchema+'.'+tableName+' SET ? ';
-						sql='INSERT INTO '+parentSchema+'.'+tableName;
 						for(var k in rows){
 							var row = rows[k];
 							var sql2 = mysql.format('?',row.after);
-							var insert_sql = sql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
-							console.log(insert_sql);
-							await exec_sql(tgt,insert_sql);
-							//var update_sql = mysql.format(sql, [row.after]) + ' WHERE '+calcWhere(row.before,row.after);
-							//console.log(update_sql);
-							//await exec_sql(tgt,update_sql);
+
+							if (!! argo.use_upsert){
+								var basesql='INSERT INTO '+parentSchema+'.'+tableName;
+								var update_sql = basesql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
+							}else{
+								var basesql='UPDATE '+parentSchema+'.'+tableName+' SET ? ';
+								var update_sql = mysql.format(basesql, [row.after]) + ' WHERE '+calcWhere(row.before,row.after);
+							}
+							console.log(update_sql);
+							await exec_sql(tgt,update_sql);
 						}
 					}else{
 						if('rotate'==eventName){
@@ -152,22 +139,22 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 						//evt.dump();
 						for(var k in evt){
 							var v = evt[k];
-							if(typeof(v)=='function'){
-								//skip
+							if(typeof(v)=='function'){ //skip
 							}else{
 								console.log(k,'=>',o2s(v));
 							}
 						}
 						return;
 					}
-				}else
-					await P.delay(111);
+				}else await P.delay(111);
 			})()
 		}while(true);
 	}catch(ex){
 		console.log('STOP FOR',ex);
-		zongji.removeListener('binlog', onBinlog);
-		zongji.stop();
+		if(zongji){
+			zongji.removeListener('binlog', onBinlog);
+			zongji.stop();
+		}
 		tgt.end();
 	}
 })();
