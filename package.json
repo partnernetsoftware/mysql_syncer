@@ -1,6 +1,6 @@
 {
   "name": "mysql_syncer",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "mysql syncer",
   "main": "binlog_syncer.js",
   "repository": {

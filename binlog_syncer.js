@@ -9,9 +9,9 @@ const crypto = require('crypto')
 let md5 = s=>crypto.createHash('md5').update(s).digest("hex");
 const ZongJi = require('zongji');//@ref https://github.com/nevill/zongji
 
-var md5_argo = md5(s2o(argo));
+var md5_argo = md5(o2s(argo));
 
-console.log(md5_argo);
+console.log({md5_argo,o2s_argo:o2s(argo)});
 
 var {filename,position} = load(md5_argo+'.tmp') || argo;
 
@@ -51,6 +51,7 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 		});
 		tgt.on('error',console.log);
 		tgt.connect();
+		if(!! argo.skip_tgt_binlog)
 		await exec_sql(tgt,'SET @@session.sql_log_bin=0');//no binlog when sync
 
 		var zongji = new ZongJi({
