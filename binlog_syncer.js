@@ -13,9 +13,12 @@ var md5_argo = md5(s2o(argo));
 
 console.log(md5_argo);
 
-var {filename,position} = load(md5_argo+'.tmp') || argo;
+var {filename,position,includeSchema,excludeSchema} = load(md5_argo+'.tmp') || argo;
 
-console.log({filename,position});//process.exit();
+includeSchema = s2o(includeSchema);
+excludeSchema = s2o(excludeSchema);
+
+console.log({filename,position,includeSchema,excludeSchema});//process.exit();
 
 var flg_init_with_info = !!(filename && position);
 
@@ -72,8 +75,8 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 		zongji.on('binlog', onBinlog);
 
 		zongji.start({
-			//includeEvents: ['rotate','tablemap', 'writerows', 'updaterows', 'deleterows'],
-			excludeSchema: {'mysql':true, 'information_schema':true},
+			//excludeSchema: {'mysql':true, 'information_schema':true},
+			includeSchema,excludeSchema,
 			includeEvents: ['rotate','tablemap','writerows','updaterows'],
 			startAtEnd:!flg_init_with_info,
 			debug: argo.debug,
