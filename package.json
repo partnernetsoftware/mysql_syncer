@@ -1,0 +1,19 @@
+{
+  "name": "mysql_syncer",
+  "version": "0.0.1",
+  "description": "mysql syncer",
+  "main": "binlog_syncer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/partnernetsoftware/mysql_syncer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/partnernetsoftware/mysql_syncer/issues"
+  },
+  "homepage": "https://github.com/partnernetsoftware/mysql_syncer#readme"
+}
