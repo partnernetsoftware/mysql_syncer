@@ -9,8 +9,6 @@ const crypto = require('crypto')
 let md5 = s=>crypto.createHash('md5').update(s).digest("hex");
 const ZongJi = require('zongji');//@ref https://github.com/nevill/zongji
 
-var md5_argo = md5(o2s(argo));
-
 var tgt_config = {
 	host     : argo.tgt_host,
 	user     : argo.tgt_user,
@@ -23,6 +21,9 @@ var src_config = {
 	password : argo.src_pass,
 	port     : argo.src_port,
 };
+
+var md5_argo = md5(o2s({src_config,tgt_config}));
+
 console.log({md5_argo,o2s_argo:o2s({src_config,tgt_config})});
 
 var {filename,position} = load(md5_argo+'.tmp') || argo;
