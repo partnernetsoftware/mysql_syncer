@@ -11,7 +11,19 @@ const ZongJi = require('zongji');//@ref https://github.com/nevill/zongji
 
 var md5_argo = md5(o2s(argo));
 
-console.log({md5_argo,o2s_argo:o2s(argo)});
+var tgt_config = {
+	host     : argo.tgt_host,
+	user     : argo.tgt_user,
+	password : argo.tgt_pass,
+	port     : argo.tgt_port,
+};
+var src_config = {
+	host     : argo.src_host,
+	user     : argo.src_user,
+	password : argo.src_pass,
+	port     : argo.src_port,
+};
+console.log({md5_argo,o2s_argo:o2s({src_config,tgt_config})});
 
 var {filename,position} = load(md5_argo+'.tmp') || argo;
 
@@ -43,23 +55,13 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 
 	try{
 		var latest_filename = filename;
-		var tgt = mysql.createConnection({
-			host     : argo.tgt_host,
-			user     : argo.tgt_user,
-			password : argo.tgt_pass,
-			port     : argo.tgt_port,
-		});
+		var tgt = mysql.createConnection(tgt_config);
 		tgt.on('error',console.log);
 		tgt.connect();
-		if(!! argo.skip_tgt_binlog)
-		await exec_sql(tgt,'SET @@session.sql_log_bin=0');//no binlog when sync
+		if(!! argo.skip_tgt_binlog) // default no skip
+			await exec_sql(tgt,'SET @@session.sql_log_bin=0');//skip binlog when sync
 
-		var zongji = new ZongJi({
-			host     : argo.src_host,
-			user     : argo.src_user,
-			password : argo.src_pass,
-			port     : argo.src_port,
-		});
+		var zongji = new ZongJi(src_config);
 
 		var work_q = [];
 
