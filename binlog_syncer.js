@@ -25,7 +25,7 @@ var src_config = {
 
 var md5_argo = md5(o2s({src_config,tgt_config}));
 
-console.log({md5_argo,o2s_argo:o2s({src_config,tgt_config})});
+console.log('DEBUG 101',{md5_argo,o2s_argo:o2s({src_config,tgt_config})});
 
 var {filename,position} = load(md5_argo+'.tmp') || argo;
 
@@ -34,7 +34,7 @@ var {includeSchema,excludeSchema} = argo;
 includeSchema = s2o(includeSchema);
 excludeSchema = s2o(excludeSchema);
 
-console.log({filename,position,includeSchema,excludeSchema,argo});//process.exit();
+console.log('DEBUG 102',{filename,position,includeSchema,excludeSchema,argo});//process.exit();
 
 var flg_init_with_info = !!(filename && position);
 
@@ -109,7 +109,13 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 					var {nextPosition,position,binlogName,tableId,tableMap={},rows} = evt;
 
 					if('writerows'==eventName){
-						if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
+						if (nextPosition){
+							if(latest_filename && nextPosition){
+								save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
+							}else{
+								console.log('??????????',{latest_filename,position});
+							}
+						}
 						var tableInfo = tableMap[tableId]||{};
 						var {parentSchema,tableName} = tableInfo;
 						var basesql='INSERT INTO '+parentSchema+'.'+tableName;//+' SET ? ON DUPLICATE KEY UPDATE ?';
@@ -119,31 +125,46 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 						await exec_sql(tgt,insert_sql);
 						return;
 					}else if('updaterows'==eventName){
-						if (nextPosition) save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
+						if (nextPosition){
+							if(latest_filename && nextPosition){
+								save(md5_argo+'.tmp',{filename:latest_filename,position:nextPosition})
+							}else{
+								console.log('??????????',{latest_filename,position});
+							}
+						}
 						var tableInfo = tableMap[tableId]||{};
 						var {parentSchema,tableName} = tableInfo;
 						for(var k in rows){
 							var row = rows[k];
 							var sql2 = mysql.format('?',row.after);
 
-							if (!! argo.use_upsert){
+							if (!! argo.use_upsert){//use upsert algo
 								var basesql='INSERT INTO '+parentSchema+'.'+tableName;
 								var update_sql = basesql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
-							}else{
+							}else{//default using update
 								var basesql='UPDATE '+parentSchema+'.'+tableName+' SET ? ';
 								var update_sql = mysql.format(basesql, [row.after]) + ' WHERE '+calcWhere(row.before,row.after);
 							}
-							console.log(update_sql);
+							console.log({update_sql});
 							await exec_sql(tgt,update_sql);
 						}
 					}else{
 						if('rotate'==eventName){
 							console.log(`node binlog_syncer /filename=${binlogName} /position=${position}`);
-							if(flg_init_with_info){
-								latest_filename = binlogName;
-								save(md5_argo+'.tmp',{filename:latest_filename,position});
+							latest_filename = binlogName;
+							if(flg_init_wi_info){
+								if(latest_filename && position){
+									save(md5_argo+'.tmp',{filename:latest_filename,position});
+									console.log('save',{binlogName,latest_filename,position});
+								}else{
+									console.log('??????????',{binlogName,latest_filename,position});
+								}
 							}else{
-								throw new Error('need manually')
+								if(!! argo.from_now){
+									//from now
+									save(md5_argo+'.tmp',{filename:latest_filename,position});
+									console.log('save',{binlogName,latest_filename,position});
+								}else throw new Error('need manually')//default throw err
 							}
 						}
 						//evt.dump();
