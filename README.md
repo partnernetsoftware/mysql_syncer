@@ -2,6 +2,10 @@
 
 mysql realtime syncer based on zongji (binlog-slave-monitoring)
 
+# todo
+
+https://segmentfault.com/a/1190000008169097
+
 # limitation
 
 * table schema sync is not yet done;
