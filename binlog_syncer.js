@@ -152,7 +152,7 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 						if('rotate'==eventName){
 							console.log(`node binlog_syncer /filename=${binlogName} /position=${position}`);
 							latest_filename = binlogName;
-							if(flg_init_wi_info){
+							if(flg_init_with_info){
 								if(latest_filename && position){
 									save(md5_argo+'.tmp',{filename:latest_filename,position});
 									console.log('save',{binlogName,latest_filename,position});

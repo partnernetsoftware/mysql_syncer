@@ -1,6 +1,6 @@
 {
   "name": "mysql_syncer",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "mysql syncer upon zongji",
   "main": "binlog_syncer.js",
   "repository": {
