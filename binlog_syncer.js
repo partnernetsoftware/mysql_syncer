@@ -25,7 +25,7 @@ var src_config = {
 
 var md5_argo = md5(o2s({src_config,tgt_config}));
 
-console.log('DEBUG 101',{md5_argo,o2s_argo:o2s({src_config,tgt_config})});
+console.log('DEBUG',{md5_argo,o2s_argo:o2s({src_config,tgt_config})});
 
 var {filename,position} = load(md5_argo+'.tmp') || argo;
 
@@ -34,7 +34,7 @@ var {includeSchema,excludeSchema} = argo;
 includeSchema = s2o(includeSchema);
 excludeSchema = s2o(excludeSchema);
 
-console.log('DEBUG 102',{filename,position,includeSchema,excludeSchema,argo});//process.exit();
+console.log('DEBUG',{filename,position,includeSchema,excludeSchema,argo});//process.exit();
 
 var flg_init_with_info = !!(filename && position);
 
@@ -139,9 +139,11 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 							var sql2 = mysql.format('?',row.after);
 
 							if (!! argo.use_upsert){//use upsert algo
+								//NOTES: some cycle run for bi-way sync, finding way to solve...
 								var basesql='INSERT INTO '+parentSchema+'.'+tableName;
 								var update_sql = basesql + ' SET '+sql2+' ON DUPLICATE KEY UPDATE '+sql2;
 							}else{//default using update
+								//NOTES: some special case not able to update.. (e.g. sync failed previously)
 								var basesql='UPDATE '+parentSchema+'.'+tableName+' SET ? ';
 								var update_sql = mysql.format(basesql, [row.after]) + ' WHERE '+calcWhere(row.before,row.after);
 							}
