@@ -1,6 +1,5 @@
-//NOTES: run at tgt server should have better performance ?
+//NOTES: run at tgt server should have better performance.
 
-//const argv2o = a => (a || require('process').argv || []).reduce((r, e) => ((m = e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/)) && (r[m[2]] = s2o(m[3])||m[3]), r), {});
 const argv2o = a => (a || require('process').argv || []).reduce((r, e) => ((m = e.match(/^(\/|--?)([\w-]*)="?(.*)"?$/)) && (r[m[2]] = m[3]), r), {});
 var argo = argv2o();
 const p4web = require('p4web')({cookie_pack:'default'});
@@ -59,16 +58,28 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 
 	try{
 		var latest_filename = filename;
-		var tgt = mysql.createConnection(tgt_config);
-		tgt.on('error',err=>{
-			console.log('tgt.error',err);
-			if(zongji){
-				zongji.removeListener('binlog', onBinlog);
-				zongji.stop();
+		var tgt;
+		var tgt_start = ()=>{
+			console.log('tgt_start...')
+			if(tgt){
+				tgt.removeListener('error');
+				tgt = null;
 			}
-			setTimeout(process.exit,1111);
-		});
-		tgt.connect();
+			tgt = mysql.createConnection(tgt_config);
+			tgt.on('error',err=>{
+				console.log('tgt.error',err);
+				if('PROTOCOL_CONNECTION_LOST'==err.code){
+				}else{
+					if(zongji){
+						zongji.removeListener('binlog', onBinlog);
+						zongji.stop();
+					}
+					setTimeout(process.exit,1111);
+				}
+			});
+			tgt.connect();
+		}
+		tgt_start();
 		if(!! argo.skip_tgt_binlog) // default no skip
 			await exec_sql(tgt,'SET @@session.sql_log_bin=0');//skip binlog when sync
 
@@ -107,9 +118,15 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 				var evt = work_q.shift();//Q Head
 				if(evt){
 					var eventName = evt.getEventName();
-					if (eventName == 'tablemap'){ return; }
+					//if (eventName == 'tablemap'){ return; }
 					var {nextPosition,position,binlogName,tableId,tableMap={},rows} = evt;
 
+					if('tablemap'==eventName){
+						//evt.dump();
+						//save(md5_argo+'.tmp',null)
+						console.log(`/filename=${latest_filename} /position=${nextPosition}`);
+						//throw new Error('table changed, need sync manually, and then start again from new position')
+					}else
 					if('writerows'==eventName){
 						if (nextPosition){
 							if(latest_filename && nextPosition){
@@ -154,7 +171,7 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 						}
 					}else{
 						if('rotate'==eventName){
-							console.log(`node binlog_syncer /filename=${binlogName} /position=${position}`);
+							console.log(`node binlog_syncer /filename=${latest_filename} /position=${position}`);
 							latest_filename = binlogName;
 							if(flg_init_with_info){
 								if(latest_filename && position){
@@ -191,6 +208,7 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 			zongji.stop();
 		}
 		tgt.end();
+		setTimeout(process.exit,1111);
 	}
 })();
 
