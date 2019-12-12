@@ -111,6 +111,7 @@ var exec_sql=(c,s)=>P((v,j)=>c.query(s,(e,r,f)=>(e?j(e):v([r,f]))));
 			debug: argo.debug,
 			filename,
 			position,
+			serverId:1000+Math.floor(Math.random()*1000),
 		});
 
 		do{
