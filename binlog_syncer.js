@@ -15,6 +15,7 @@ var tgt_config = {
 	password : argo.tgt_pass,
 	port     : argo.tgt_port,
 	timezone : argo.timezone || '+00:00'//TMP
+	,charset:'UTF8MB4_GENERAL_CI'
 };
 var src_config = {
 	host     : argo.src_host,
@@ -22,6 +23,7 @@ var src_config = {
 	password : argo.src_pass,
 	port     : argo.src_port,
 	timezone : argo.timezone || '+00:00'//TMP
+	,charset:'UTF8MB4_GENERAL_CI'
 };
 
 var md5_argo = md5(o2s({src_config,tgt_config}));
