@@ -34,7 +34,7 @@ mysqlbinlog $MASTER_ACCESS --read-from-remote-server --stop-never-slave-server-i
 --stop-never --disable-log-bin --set-charset=utf8mb4 --base64-output=DECODE-ROWS -v -j $BINLOG_POS $BINLOG_FILE \
 | node binlog_handler.js
 
-# modify sync() to do what every what.... and will be modulized in future ;)
+# modify sync() to do whatever u want .... and might be modularized in future ;)
 
 ```
 
